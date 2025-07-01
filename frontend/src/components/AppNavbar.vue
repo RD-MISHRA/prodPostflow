@@ -127,7 +127,7 @@ export default {
       const left = window.screen.width / 2 - width / 2;
       const top = window.screen.height / 2 - height / 2;
 
-      const backendUrl = 'http://localhost:5000';
+      const backendUrl = process.env.VUE_APP_API_BASE_URL;
       const googleAuthPopup = window.open(
         `${backendUrl}/api/auth/google`,
         'GoogleLogin',

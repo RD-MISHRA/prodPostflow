@@ -38,7 +38,7 @@ export default {
       loading: false,
       successMessage: "",
       errorMessage: "",
-      tweetLink: "", // NEW: store tweet URL
+      tweetLink: "",
     };
   },
   methods: {
@@ -49,13 +49,15 @@ export default {
         return;
       }
 
+      const backendUrl = process.env.VUE_APP_API_BASE_URL;
+
       this.loading = true;
       this.successMessage = "";
       this.errorMessage = "";
       this.tweetLink = "";
 
       try {
-        const response = await fetch("http://localhost:5000/api/social/twitter/tweet", {
+        const response = await fetch(`${backendUrl}api/social/twitter/tweet`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -68,8 +70,6 @@ export default {
         if (response.ok) {
           this.successMessage = `✅ Tweet posted!`;
           this.tweetText = "";
-
-          // build tweet URL
           this.tweetLink = `https://twitter.com/${data.username}/status/${data.tweetId}`;
         } else {
           this.errorMessage = data.error || "Tweet failed";
@@ -86,5 +86,4 @@ export default {
 </script>
 
 <style scoped>
-/* Optional: style improvements could go here */
 </style>

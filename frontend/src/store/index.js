@@ -37,9 +37,10 @@ export default new Vuex.Store({
 
   actions: {
     async validateTokenAndFetchUser({ commit }, token) {
+      const backendUrl = process.env.VUE_APP_API_BASE_URL;
       console.log('Action validateTokenAndFetchUser called with token:', token);
       try {
-        const res = await axios.get('http://localhost:5000/api/auth/validate', {
+        const res = await axios.get(`${backendUrl}api/auth/validate`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

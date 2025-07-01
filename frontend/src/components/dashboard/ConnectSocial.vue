@@ -44,8 +44,10 @@ export default {
         return;
       }
 
+      const backendUrl = process.env.VUE_APP_API_BASE_URL; 
+
       try {
-        const response = await fetch("http://localhost:5000/api/social/twitter", {
+        const response = await fetch(`${backendUrl}api/social/twitter`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await response.json();
@@ -70,7 +72,9 @@ export default {
         return;
       }
 
-      window.location.href = `http://localhost:5000/auth/x?token=${token}`;
+      const backendUrl = process.env.VUE_APP_API_BASE_URL; 
+
+      window.location.href = `${backendUrl}auth/x?token=${token}`;
     },
   },
 };
