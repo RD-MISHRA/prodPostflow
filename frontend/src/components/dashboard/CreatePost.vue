@@ -57,7 +57,7 @@ export default {
       this.tweetLink = "";
 
       try {
-        const response = await fetch(`${backendUrl}api/social/twitter/tweet`, {
+        const response = await fetch(`${backendUrl}/api/social/twitter/tweet`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,

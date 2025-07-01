@@ -47,7 +47,7 @@ export default {
       const backendUrl = process.env.VUE_APP_API_BASE_URL; 
 
       try {
-        const response = await fetch(`${backendUrl}api/social/twitter`, {
+        const response = await fetch(`${backendUrl}/api/social/twitter`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await response.json();

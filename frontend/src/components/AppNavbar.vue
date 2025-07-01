@@ -115,57 +115,73 @@ export default {
     }
   },
   methods: {
-    ...mapActions(['loginWithGoogle','logout']),
-   
-    handleLogout(){
-      this.logout();
-     
-    },
-    handleGoogleAuth() {
-      const width = 500;
-      const height = 600;
-      const left = window.screen.width / 2 - width / 2;
-      const top = window.screen.height / 2 - height / 2;
+  ...mapActions(['loginWithGoogle', 'logout']),
 
-      const backendUrl = process.env.VUE_APP_API_BASE_URL;
-      const googleAuthPopup = window.open(
-        `${backendUrl}/api/auth/google`,
-        'GoogleLogin',
-        `width=${width},height=${height},top=${top},left=${left}`
-      );
+  handleLogout() {
+    this.logout();
+  },
 
-      const receiveMessage = async (event) => {
-        if (event.origin !== backendUrl) return;
+  handleGoogleAuth() {
+    const width = 500;
+    const height = 600;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
 
-        const { token, error } = event.data;
+    const backendUrl = process.env.VUE_APP_API_BASE_URL;
+    const frontendUrl = process.env.VUE_APP_FRONTEND_URL;  // 🚨 Use this for strict origin check
 
-        if (error) {
-          alert(error);
-          return;
+    const googleAuthPopup = window.open(
+      `${backendUrl}/api/auth/google`,
+      'GoogleLogin',
+      `width=${width},height=${height},top=${top},left=${left}`
+    );
+
+    const receiveMessage = async (event) => {
+      console.log('📨 Received postMessage from origin:', event.origin);
+
+      const expectedOrigin = frontendUrl;
+
+      const isDev = process.env.NODE_ENV !== 'production';
+      const isExpectedOrigin =
+        event.origin === expectedOrigin ||
+        (isDev && event.origin.includes('localhost'));
+
+      if (!isExpectedOrigin) {
+        console.warn(`🚫 Ignoring message from unexpected origin: ${event.origin} (expected: ${expectedOrigin})`);
+        return;
+      }
+
+      const { token, error } = event.data;
+
+      if (error) {
+        alert(error);
+        return;
+      }
+
+      if (token) {
+        try {
+          console.log('✅ Token received:', token);
+          localStorage.setItem('token', token);
+          await this.loginWithGoogle(token);
+          console.log('✅ User authenticated and Vuex state updated');
+          window.location.reload();
+        } catch (err) {
+          console.error('❌ Failed to validate token:', err);
         }
+      }
+    };
 
-        if (token) {
-          try {
-            localStorage.setItem('token', token);
-            await this.loginWithGoogle(token); // ✅ mapped action
-            console.log('✅ User authenticated and Vuex state updated');
-             window.location.reload();
-          } catch (err) {
-            console.error('❌ Failed to validate token:', err);
-          }
-        }
-      };
+    window.addEventListener('message', receiveMessage, false);
 
-      window.addEventListener('message', receiveMessage, false);
-  
-      const timer = setInterval(() => {
-        if (googleAuthPopup.closed) {
-          clearInterval(timer);
-          window.removeEventListener('message', receiveMessage);
-        }
-      }, 500);
-    }
+    const timer = setInterval(() => {
+      if (googleAuthPopup.closed) {
+        clearInterval(timer);
+        window.removeEventListener('message', receiveMessage);
+      }
+    }, 500);
   }
+}
+
 };
 </script>
 
