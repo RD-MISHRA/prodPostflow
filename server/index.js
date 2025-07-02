@@ -34,6 +34,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 app.use((req, res, next) => {
   console.log("🌐 Incoming request from origin:", req.headers.origin);
@@ -457,6 +458,10 @@ app.post("/api/social/twitter/tweet", async (req, res) => {
     console.error("❌ Tweet failed:", error);
     return res.status(500).json({ error: "Tweet failed", details: error.data || error.message });
   }
+});
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 });
 
 

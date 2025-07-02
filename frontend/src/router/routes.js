@@ -60,7 +60,6 @@ const router = new VueRouter({
 //   }
 // });
 
-
 router.beforeEach(async (to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiredAuth);
   let isAuthenticated = store.state.authenticated;
@@ -83,9 +82,17 @@ router.beforeEach(async (to, from, next) => {
   if (requiresAuth && !isAuthenticated) {
     console.log('[Router Guard] Not authenticated, redirecting to landing page.');
     next({ path: '/', query: { redirectFrom: to.fullPath } });
-  } else {
-    next();
+    return;
   }
+
+  if (!requiresAuth && isAuthenticated && to.path !== '/dashboard') {
+    console.log('[Router Guard] Authenticated user trying to access public route, redirecting to /dashboard');
+    next({ path: '/dashboard' });
+    return;
+  }
+
+  next();
 });
+
 
 export default router;
