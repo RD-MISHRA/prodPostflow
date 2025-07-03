@@ -39,10 +39,9 @@
           </div>
           <button
             @click="handleLogout"
-            class="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition flex items-center justify-center"
-            title="Logout"
+            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition font-semibold"
           >
-            <font-awesome-icon :icon="['fas', 'right-from-bracket']" class="text-lg" />
+            Logout
           </button>
         </div>
         <button
@@ -77,10 +76,9 @@
           <div class="text-gray-500 text-xs">{{ user.email }}</div>
           <button
             @click="handleLogout"
-            class="w-full mt-2 p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center"
-            title="Logout"
+            class="w-full mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold"
           >
-            <font-awesome-icon :icon="['fas', 'right-from-bracket']" class="text-lg" />
+            Logout
           </button>
         </div>
       </div>
@@ -94,6 +92,7 @@
     </div>
   </header>
 </template>
+
 
 <script>
 import { mapActions, mapGetters } from 'vuex';
@@ -121,49 +120,78 @@ export default {
     this.logout();
   },
 
-  handleGoogleAuth() {
-      const width = 500;
-      const height = 600;
-      const left = window.screen.width / 2 - width / 2;
-      const top = window.screen.height / 2 - height / 2;
-
-      const backendUrl = 'http://localhost:5000';
-      const googleAuthPopup = window.open(
-        `${backendUrl}/api/auth/google`,
-        'GoogleLogin',
-        `width=${width},height=${height},top=${top},left=${left}`
-      );
-
-      const receiveMessage = async (event) => {
-        if (event.origin !== backendUrl) return;
-
-        const { token, error } = event.data;
-
-        if (error) {
-          alert(error);
-          return;
-        }
-
-        if (token) {
-          try {
-            localStorage.setItem('token', token);
-            await this.loginWithGoogle(token); // ✅ mapped action
-            console.log('✅ User authenticated and Vuex state updated');
-             window.location.reload();
-          } catch (err) {
-            console.error('❌ Failed to validate token:', err);
-          }
-        }
-      };
-
-      window.addEventListener('message', receiveMessage, false);
+ handleGoogleAuth() {
   
-      const timer = setInterval(() => {
-        if (googleAuthPopup.closed) {
-          clearInterval(timer);
-          window.removeEventListener('message', receiveMessage);
-        }
-      }, 500);
+
+  const width = 500;
+ 
+
+  const height = 600;
+ 
+
+  const left = window.screen.width / 2 - width / 2;
+  console.log('↔️ Calculated left position:', left);
+
+  const top = window.screen.height / 2 - height / 2;
+  
+
+  const backendUrl = process.env.VUE_APP_API_BASE_URL;
+  
+  const googleAuthPopup = window.open(
+    `${backendUrl}/api/auth/google`,
+    'GoogleLogin',
+    `width=${width},height=${height},top=${top},left=${left}`
+  );
+  
+
+  const receiveMessage = async (event) => {
+   
+
+    // if (event.origin !== backendUrl) {
+    //   console.log('⚠️ Origin mismatch, ignoring message');
+    //   return;
+    // }
+
+    const { token, error } = event.data;
+    
+
+    if (error) {
+      console.log('❗ Error from popup:', error);
+      alert(error);
+      return;
+    }
+
+    if (token) {
+      console.log('🔑 Token received:', token);
+      try {
+        localStorage.setItem('token', token);
+        console.log('💾 Token saved to localStorage');
+        
+        await this.loginWithGoogle(token); // ✅ mapped action
+        console.log('✅ User authenticated and Vuex state updated');
+        
+        window.location.reload();
+        console.log('🔄 Page reloaded');
+      } catch (err) {
+        console.error('❌ Failed to validate token:', err);
+      }
+    }
+  };
+
+  window.addEventListener('message', receiveMessage, false);
+  
+
+  const timer = setInterval(() => {
+    
+    if (googleAuthPopup.closed) {
+     
+      clearInterval(timer);
+     
+      window.removeEventListener('message', receiveMessage);
+      
+    }
+  }, 500);
+
   }
 }
 
