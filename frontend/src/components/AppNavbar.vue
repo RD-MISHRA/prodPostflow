@@ -133,19 +133,20 @@ export default {
   console.log('↔️ Calculated left position:', left);
 
   const top = window.screen.height / 2 - height / 2;
-  
+  console.log('↕️ Calculated top position:', top);
 
   const backendUrl = process.env.VUE_APP_API_BASE_URL;
-  
+  console.log('🌐 Backend URL:', backendUrl);
+
   const googleAuthPopup = window.open(
     `${backendUrl}/api/auth/google`,
     'GoogleLogin',
     `width=${width},height=${height},top=${top},left=${left}`
   );
-  
+  console.log('🪟 Opened Google auth popup:', googleAuthPopup);
 
   const receiveMessage = async (event) => {
-   
+    console.log('📨 Received message event:', event);
 
     // if (event.origin !== backendUrl) {
     //   console.log('⚠️ Origin mismatch, ignoring message');
@@ -153,7 +154,7 @@ export default {
     // }
 
     const { token, error } = event.data;
-    
+    console.log('📦 Message data:', { token, error });
 
     if (error) {
       console.log('❗ Error from popup:', error);
@@ -179,16 +180,16 @@ export default {
   };
 
   window.addEventListener('message', receiveMessage, false);
-  
+  console.log('🧏 Listening for message from popup');
 
   const timer = setInterval(() => {
-    
+    console.log('⏱ Checking if popup closed');
     if (googleAuthPopup.closed) {
-     
+      console.log('❌ Popup closed');
       clearInterval(timer);
-     
+      console.log('🛑 Interval cleared');
       window.removeEventListener('message', receiveMessage);
-      
+      console.log('🚫 Message listener removed');
     }
   }, 500);
 
