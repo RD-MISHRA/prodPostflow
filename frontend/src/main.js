@@ -5,6 +5,8 @@ import store from './store'
 Vue.config.productionTip = false
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import VCalendar from 'v-calendar';
+Vue.use(VCalendar, {});
 
 
 import { 

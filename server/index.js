@@ -12,6 +12,9 @@ const User = require("./models/User"); // Adjust the path as necessary
 const mongoose = require("mongoose");
 const OAuth = require("oauth").OAuth;
 const path = require("path");
+const { OpenAI } = require("openai"); 
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const Post = require('./models/Post');
 // Load environment variables
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -459,7 +462,142 @@ app.post("/api/social/twitter/tweet", async (req, res) => {
     return res.status(500).json({ error: "Tweet failed", details: error.data || error.message });
   }
 });
+const OPENAI_API_KEY=process.env.OPENAI_API_KEY
+app.post('/api/generate-post', async (req, res) => {
+  console.log("➡️ POST /api/generate-post called");
+  const { prompt } = req.body;
 
+  if (!prompt) {
+    return res.status(400).json({ error: "Prompt is required." });
+  }
+
+  if (OPENAI_API_KEY === "YOUR_OPENAI_API_KEY_HERE" || !OPENAI_API_KEY) {
+    return res.status(500).json({ error: "OpenAI API Key is not configured. Please replace 'YOUR_OPENAI_API_KEY_HERE' with your actual key." });
+  }
+
+  try {
+    const messages = [
+      {
+        role: 'system',
+        content: `You are a creative social media assistant. Generate two distinct social media posts based on the user's idea.
+                  One post should be optimized for Twitter (concise, hashtags, emojis, max ~280 chars) and
+                  the other for LinkedIn (professional, detailed, thought-provoking, suitable for a business network).
+                  Provide the output as a JSON object with two keys: "twitterPost" and "linkedinPost".
+                  Ensure the JSON is perfectly formatted and parseable.`,
+      },
+      {
+        role: 'user',
+        content: `Create social media posts for: ${prompt}`,
+      },
+    ];
+
+    // Using fetch directly to OpenAI API
+    const openaiApiUrl = 'https://api.openai.com/v1/chat/completions';
+    const openaiPayload = {
+      model: 'gpt-3.5-turbo', // You can use other models like 'gpt-4o' if you have access
+      messages: messages,
+      response_format: { type: "json_object" }, // Instructs OpenAI to return JSON
+    };
+
+    const openaiResponse = await fetch(openaiApiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify(openaiPayload)
+    });
+
+    if (!openaiResponse.ok) {
+      const errorData = await openaiResponse.json();
+      console.error("OpenAI API Error Response:", errorData);
+      throw new Error(`OpenAI API call failed with status ${openaiResponse.status}: ${JSON.stringify(errorData)}`);
+    }
+
+    const openaiResult = await openaiResponse.json();
+    console.log("OpenAI API Raw Result:", openaiResult);
+
+    if (openaiResult.choices && openaiResult.choices.length > 0 &&
+        openaiResult.choices[0].message && openaiResult.choices[0].message.content) {
+      const jsonString = openaiResult.choices[0].message.content;
+      const parsedJson = JSON.parse(jsonString);
+
+      if (parsedJson.twitterPost && parsedJson.linkedinPost) {
+        res.json({
+          twitterPost: parsedJson.twitterPost,
+          linkedinPost: parsedJson.linkedinPost
+        });
+      } else {
+        throw new Error("Unexpected JSON structure from LLM. Missing 'twitterPost' or 'linkedinPost'.");
+      }
+    } else {
+      throw new Error("No valid content received from the OpenAI LLM.");
+    }
+
+  } catch (error) {
+    console.error("Error generating posts:", error);
+    res.status(500).json({ error: error.message || "An unexpected error occurred." });
+  }
+});
+
+
+app.post('/api/save-post', authenticateToken, async (req, res) => {
+  console.log("➡️ POST /api/save-post called");
+  const { content, title, platform } = req.body;
+  const userId = req.userId; // Set by authenticateToken middleware
+
+  if (!content || !title || !platform) {
+    return res.status(400).json({ message: "Content, title, and platform are required." });
+  }
+
+  // Basic validation for platform
+  const allowedPlatforms = ['Twitter', 'LinkedIn'];
+  if (!allowedPlatforms.includes(platform)) {
+    return res.status(400).json({ message: "Invalid platform specified." });
+  }
+
+  try {
+    // Find the user to ensure userId is valid and connected (optional, but good practice)
+    const user = await User.findById(userId);
+    if (!user) {
+      console.warn(`Attempted to save post for non-existent user ID: ${userId}`);
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const newPost = new Post({
+      userId: userId,
+      platform: platform,
+      title: title,
+      content: content,
+    });
+
+    await newPost.save();
+    console.log("Post saved successfully:", newPost);
+    res.status(201).json({ message: "Post saved successfully!", post: newPost });
+
+  } catch (error) {
+    console.error("Error saving post:", error);
+    res.status(500).json({ message: "Error saving post.", error: error.message });
+  }
+});
+
+
+app.get('/api/user-posts', authenticateToken, async (req, res) => {
+  console.log("➡️ GET /api/user-posts called for userId:", req.userId);
+  const userId = req.userId; // User ID from the authenticated token
+
+  try {
+    // Find all posts for the given userId, sorted by generatedAt in descending order
+    const userPosts = await Post.find({ userId: userId }).sort({ generatedAt: -1 });
+
+    console.log(`Found ${userPosts.length} posts for user ${userId}`);
+    res.json({ posts: userPosts });
+
+  } catch (error) {
+    console.error("Error fetching user posts:", error);
+    res.status(500).json({ message: "Error fetching user posts.", error: error.message });
+  }
+});
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 });

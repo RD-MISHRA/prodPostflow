@@ -6,8 +6,9 @@ import CreatePost from "@/components/dashboard/CreatePost.vue";
 import SavedPost from "@/components/dashboard/SavedPost.vue";
  import store from "@/store/index.js";
 import ConnectSocial from "@/components/dashboard/ConnectSocial.vue";
-
-
+import CalendarView from "@/components/dashboard/CalendarView.vue";
+import ScheduledPost from "@/components/dashboard/ScheduledPost.vue";
+import PublishPost from "@/components/dashboard/PublishPost.vue";
 Vue.use(VueRouter);
 
 const routes = [
@@ -34,7 +35,24 @@ const routes = [
         path: 'connect-social',
         component: ConnectSocial,   
         meta: { requiredAuth: true },
-      }
+      },
+       {
+      path: 'calendar-view', 
+      component: CalendarView,
+      meta: { requiredAuth: true },
+    },
+    {
+      path: 'scheduled-post', 
+      component: ScheduledPost,
+      meta: { requiredAuth: true },
+    },
+    {
+      
+      path: 'publish-post', 
+      component: PublishPost,
+      meta: { requiredAuth: true },
+    
+    },
     ],
   },
 ];
